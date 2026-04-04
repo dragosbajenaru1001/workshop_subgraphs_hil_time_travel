@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from langgraph.graph import StateGraph
 from ex_1_subgraphs.state import GraphState
 from ex_1_subgraphs.nodes import generate_text, run_subgraph, format_output
