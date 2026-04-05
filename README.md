@@ -26,11 +26,11 @@ pip install -r requirements.txt
 Every example passes one value through the graph — a piece of text:
 
 ```python
-class GraphState(TypedDict):
+class SharedState(TypedDict):
     text: str
 ```
 
-Think of `GraphState` as a backpack that gets handed from step to step. Each step can read from it or add something to it.
+Think of `SharedState` as a backpack that gets handed from step to step. Each step can read from it or add something to it.
 
 ---
 
@@ -43,14 +43,14 @@ Sometimes a step in your workflow is complex enough to deserve its own mini-grap
 **Flow:**
 
 ```
-generate → subgraph → format
+draft → subgraph → final
 ```
 
 | Step | What happens |
 |------|--------------|
-| `generate` | Creates the initial text: `"This is AI generated content."` |
-| `subgraph` | Hands the text to a mini-graph that improves it by appending a sentence |
-| `format` | Wraps the final text with a `[FINAL]` label |
+| `draft` | Creates the initial text: `"The quick brown fox jumps over the lazy dog."` |
+| `subgraph` | Hands the text to a mini-graph that refines it by appending `" (refined by subgraph)"` |
+| `final` | Wraps the final text with a `[FINAL]` label |
 
 **Why use subgraphs?**
 - Keeps complex logic self-contained and reusable
@@ -63,13 +63,17 @@ python -m ex_1_subgraphs.main
 
 **Expected output:**
 ```
-[Node] Generating text...
-[Node] Running subgraph...
-[Subgraph] Improving text...
-[Node] Formatting output...
+=== RUN: SUBGRAPHS DEMO ===
+
+[Node] Drafting initial text...
+
+[Node] Refining text via subgraph...
+[Subgraph] Adding text from subgraph...
+
+[Node] Preparing final output...
 
 Final Output:
-[FINAL] This is AI generated content. It has been enhanced by subgraph.
+[FINAL] The quick brown fox jumps over the lazy dog. (refined by subgraph)
 ```
 
 ---
@@ -85,13 +89,13 @@ This example uses `MemorySaver` (checkpointing) and `interrupt_before` to pause 
 **Flow:**
 
 ```
-generate → subgraph → [pause] → review
+draft → subgraph → [pause] → review
 ```
 
 | Step | What happens |
 |------|--------------|
-| `generate` | Creates the initial text |
-| `subgraph` | Improves the text (same mini-graph as Example 1) |
+| `draft` | Creates the initial text |
+| `subgraph` | Refines the text (same mini-graph as Example 1) |
 | `[pause]` | Graph stops automatically — state is saved to a checkpoint |
 | `review` | **Resumes and asks you:** approve as-is, or type new text |
 
@@ -106,15 +110,18 @@ python -m ex_2_human_in_the_loop.main
 
 **What you'll see:**
 ```
-=== RUN 1: Generate text (pause before review) ===
-[Node] Generating text...
-[Node] Running subgraph...
-[Subgraph] Improving text...
+=== RUN 1: Draft text (pause before review) ===
+
+[Node] Drafting initial text...
+
+[Node] Refining text via subgraph...
+[Subgraph] Adding text from subgraph...
 [Paused before review node]
 
 === RUN 1 (continued): Resume for human review ===
+
 [Node] Human Review
-Current Output: This is AI generated content. It has been enhanced by subgraph.
+Current Output: The quick brown fox jumps over the lazy dog. (refined by subgraph)
 Approve or edit? (yes/edit):
 ```
 
@@ -131,7 +138,7 @@ LangGraph can save a **checkpoint** (a snapshot of the state) after every step. 
 **Flow:**
 
 ```
-generate → subgraph → review   (paused here automatically)
+draft → subgraph → review   (paused here automatically)
 ```
 
 The demo does four phases:
@@ -155,31 +162,36 @@ python -m ex_3_time_travel.main
 **Expected output:**
 ```
 === RUN 1: Initial run (pauses before review) ===
-[Node] Generating text...
-[Node] Running subgraph...
-[Subgraph] Improving text...
+
+[Node] Drafting initial text...
+
+[Node] Refining text via subgraph...
+[Subgraph] Adding text from subgraph...
 [Paused before review node]
 
 === RUN 1 (continued): Resume for human review ===
+
 [Node] Human Review
-Current Output: This is AI generated content. It has been enhanced by subgraph.
+Current Output: The quick brown fox jumps over the lazy dog. (refined by subgraph)
 Approve or edit? (yes/edit):
 
 === RUN 2: TIME TRAVEL (Start from subgraph) ===
-[Node] Running subgraph...
-[Subgraph] Improving text...
+
+[Node] Refining text via subgraph...
+[Subgraph] Adding text from subgraph...
 [Paused before review node]
 
 === RUN 2 (continued): Resume for human review ===
+
 [Node] Human Review
-Current Output: Overridden before subgraph. It has been enhanced by subgraph.
+Current Output: Overridden before subgraph. (refined by subgraph)
 Approve or edit? (yes/edit):
 
 Final output after time travel + human review:
-Overridden before subgraph. It has been enhanced by subgraph.
+Overridden before subgraph. (refined by subgraph)
 ```
 
-Notice that in Run 2, `generate` is **skipped** — the graph jumped straight to `subgraph` using the saved checkpoint, with the overridden text injected at that point. Both runs complete the full human review step before finishing.
+Notice that in Run 2, `draft` is **skipped** — the graph jumped straight to `subgraph` using the saved checkpoint, with the overridden text injected at that point. Both runs complete the full human review step before finishing.
 
 ---
 
@@ -199,20 +211,20 @@ Each example adds one new capability on top of the same core graph structure.
 
 ```
 ex_1_subgraphs/
-  state.py       — defines GraphState (the shared backpack)
-  subgraph.py    — the mini-graph that improves text
-  nodes.py       — the individual steps (generate, run_subgraph, format)
+  state.py       — defines SharedState (the shared backpack)
+  subgraph.py    — the mini-graph that refines text
+  nodes.py       — the individual steps (draft_text, run_subgraph, final_output)
   main.py        — builds and runs the full graph
 
 ex_2_human_in_the_loop/
   state.py
   subgraph.py
-  nodes.py       — same as ex_1, but review step replaces format
+  nodes.py       — same as ex_1, but human_review step replaces final_output
   main.py
 
 ex_3_time_travel/
   state.py
   subgraph.py
   nodes.py
-  main.py        — runs twice: normal run, then time-travel replay
+  main.py        — runs twice: normal run, then time-travel fork from a past checkpoint
 ```
