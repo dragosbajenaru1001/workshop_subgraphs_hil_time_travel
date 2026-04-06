@@ -105,7 +105,9 @@ from ex_2_human_in_the_loop.nodes import agent_generate, run_subgraph, human_rev
 
 Actualizeaza si invoke-ul initial:
 ```python
-result = app.invoke({"text": "", "approved": False}, config=config)
+app.invoke({"text": "", "approved": False}, config=config)
+
+result = app.invoke(None, config=config)
 print("\nOutput final:\n", result["text"])
 print("Aprobat:", result["approved"])
 ```

@@ -21,12 +21,54 @@ Adauga campurile necesare in `SharedState` (inlocuieste `text: str`):
 
 ## TODO 2 — `subgraph_qualify.py` *(fisier nou — inlocuieste `subgraph.py`)*
 Creeaza un subgraf cu un singur nod `analyze_lead` care:
-- Apeleaza Groq cu datele lead-ului din state
+- Apeleaza Groq cu datele lead-ului din state (lead_name, company, industry, budget)
 - Completeaza `qualification` si `qualification_reason`
 
 ```python
 from groq import Groq
 client = Groq()  # citeste GROQ_API_KEY din environment
+
+def analyze_lead(state: SharedState):
+    print("\n[Subgraph Qualify] Analyzing lead...")
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": #ToDo: adaugare prompt,
+            },
+            {
+                "role": "user",
+                "content": ( #ToDo: adaugare content
+                ),
+            },
+        ],
+    )
+
+    content = response.choices[0].message.content
+    print("[Qualify] Raspuns Groq:", content)
+
+    qualification = "WARM"
+    reason = content
+
+    for line in content.splitlines():
+        if line.upper().startswith("CALIFICARE:"):
+            val = line.split(":", 1)[1].strip().upper()
+            if "HOT" in val:
+                qualification = "HOT"
+            elif "COLD" in val:
+                qualification = "COLD"
+            else:
+                qualification = "WARM"
+        elif line.upper().startswith("MOTIV:"):
+            reason = line.split(":", 1)[1].strip()
+
+    state["qualification"] = qualification
+    state["qualification_reason"] = reason
+    return state
+
+#ToDo: adaugare metoda build_qualify_subgraph()
 ```
 
 System prompt sugestie: *"Esti un agent de calificare vanzari. Analizeaza datele prospectului si raspunde cu: CALIFICARE: HOT/WARM/COLD. MOTIV: <scurt>"*
@@ -40,6 +82,30 @@ Creeaza un subgraf cu un singur nod `draft_pitch` care:
 
 System prompt sugestie: *"Esti un agent de vanzari. Scrie un email scurt de vanzari adaptat calificarii prospectului."*
 
+```python
+def draft_pitch(state: SharedState):
+    print("\n[Subgraph Pitch] Generating pitch...")
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": #ToDo: adaugare prompt
+            },
+            {
+                "role": "user",
+                "content": (#ToDo: adaugare content
+                ),
+            },
+        ],
+    )
+
+    state["pitch"] = response.choices[0].message.content
+    print("[Pitch] Pitch generat:", state["pitch"])
+    return state
+```
+
 ---
 
 ## TODO 4 — `nodes.py`
@@ -49,6 +115,11 @@ Inlocuieste nodurile existente (`draft_text`, `run_subgraph`, `final_output`) di
 - `run_pitch_subgraph(state, subgraph)` — invoca subgraful 2 (subgraf injectat)
 - `format_output` — printeaza `qualification` + `pitch`
 
+```python
+def run_qualify_subgraph(state: SharedState, subgraph):
+    print("\n[Node] Running qualify subgraph...")
+    return subgraph.invoke(state) # <- asa se face injectarea subgrafului
+```
 ---
 
 ## TODO 5 — `main.py`
