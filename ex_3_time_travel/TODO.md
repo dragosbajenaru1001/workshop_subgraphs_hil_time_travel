@@ -26,6 +26,8 @@ Inlocuieste campul `text: str` cu campurile necesare in `SharedState`:
 ## TODO 2 — `nodes.py` — nodul `agent_write_article`
 Inlocuieste `draft_text` cu un nod care apeleaza Groq pentru a genera un articol de presa scurt.
 
+System prompt: `Esti un jurnalist. Scrie un articol de presa scurt (3-5 propozitii) despre un eveniment fictiv. Returneaza doar articolul, fara titlu sau explicatii.`
+User prompt: `Scrie un articol de presa.`
 ```python
 from groq import Groq
 
@@ -34,19 +36,7 @@ client = Groq()
 def agent_write_article(state: SharedState):
     print("\n[Node] Agent Write Article (Groq)...")
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "Esti un jurnalist. Scrie un articol de presa scurt (3-5 propozitii) despre un eveniment fictiv. Returneaza doar articolul, fara titlu sau explicatii.",
-            },
-            {
-                "role": "user",
-                "content": "Scrie un articol de presa.",
-            },
-        ],
-    )
+    response = #ToDo
 
     state["article"] = response.choices[0].message.content
     print("\n[Agent] Articol generat:\n", state["article"])
@@ -139,7 +129,7 @@ app.invoke(None, config=target_draft.config)
 print("[Paused before review node]")
 
 print("\n=== RUN 3 (continued): Resume for human review ===")
-result3 = app.invoke(None, config=target_draft.config)
+result3 = app.invoke(None, config=config)
 
 print("\nArticol final dupa time travel la draft:")
 print(result3["article"])
