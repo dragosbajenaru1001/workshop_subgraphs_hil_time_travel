@@ -15,7 +15,7 @@
 Adauga campurile necesare in `SharedState` (inlocuieste `text: str`):
 - `lead_name`, `company`, `industry`, `budget`
 - `qualification` (HOT/WARM/COLD), `qualification_reason`
-- `pitch`
+- `pitch` toate de tip `str`
 
 ---
 
